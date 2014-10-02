@@ -1,0 +1,35 @@
+{
+  "name": "tilleps-localhost",
+  "version": "0.1.0",
+  "description": "A simple HTTP server with LiveReload",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tilleps/node-localhost.git"
+  },
+  "keywords": [
+    "http",
+    "server",
+    "simple",
+    "livereload"
+  ],
+  "author": "Eugene Song <tilleps@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tilleps/node-localhost/issues"
+  },
+  "homepage": "https://github.com/tilleps/node-localhost",
+  "dependencies": {
+    "colors": "^1.0.1",
+    "commander": "^2.3.0",
+    "express": "^4.9.5",
+    "tiny-lr": "^0.1.4"
+  },
+  "preferGlobal": true,
+  "bin": {
+    "localhost": "./index.js"
+  }  
+}
