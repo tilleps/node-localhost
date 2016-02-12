@@ -24,8 +24,10 @@ program
   .option('--port [port]', 'the port to bind to [8080]')
   .option('--live-reload-port [port]', 'the port to start LiveReload on [35729]')
   .option('--no-color', 'disable colored output')
+	.option('--ssl', 'enable ssl/https')
+	.option('--key [key]', 'path to secure key [~/.ssh/dev/key.pem]')
+	.option('--cert [cert]', 'path to cert key [~/.ssh/dev/cert.pem]')
   .parse(process.argv);
-
 
 
 //
@@ -49,7 +51,6 @@ for (var key in directories) {
 }
 
 
-
 //
 //  Setup File Serving via Express
 //
@@ -63,7 +64,35 @@ for (var key in directories) {
 }
 
 
-app
+var server = app;
+
+//
+//	SSL/HTTPS Support (--ssl option)
+//
+if (program.ssl) {
+  
+	var keyPath = (typeof program.key != 'undefined') ? program.key : process.env.HOME + '/.ssh/dev.key.pem';
+	var certPath = (typeof program.cert != 'undefined') ? program.cert : process.env.HOME + '/.ssh/dev.cert.pem';
+  
+	//
+	//	openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 3001
+	//	openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem -days 365
+	//
+	var options = {
+	  key: fs.readFileSync(keyPath).toString(),
+	  cert: fs.readFileSync(certPath).toString(),
+		passphrase: 'test'
+	};
+  
+	var https = require('https');
+	server = https.createServer(options, app);
+  
+}
+
+
+
+
+server
   .listen(httpPort, program.host)
   .on('error', function (err) {
     
@@ -71,7 +100,7 @@ app
       
       console.error();
       console.error(colors.red.bold('You already have a server listening on port [%s]'), httpPort);
-      console.error(colors.yellow('HTTP server has been disabled'));
+      console.error(colors.yellow((program.ssl ? 'HTTPS' : 'HTTP') + ' server has been disabled'));
       console.error();
       
       return;
@@ -84,7 +113,7 @@ app
 
 
 console.info();
-console.info(colors.green('HTTP server listening on port [%d]'), httpPort);
+console.info(colors.green((program.ssl ? 'HTTPS' : 'HTTP') + ' server listening on port [%d]'), httpPort);
 
 
 
@@ -92,10 +121,10 @@ console.info(colors.green('HTTP server listening on port [%d]'), httpPort);
 //  Create LiveReload Server
 //
 
-var server = new tinylr.Server();
+var reloadServer = new tinylr.Server();
 
 
-server.error = function (err) {
+reloadServer.error = function (err) {
   
   if (err.code == 'EADDRINUSE') {
     console.error();
@@ -112,7 +141,7 @@ server.error = function (err) {
 };
 
 
-server.listen(liveReloadPort, function () {
+reloadServer.listen(liveReloadPort, function () {
   console.info(colors.green('Livereload listening on port [%d]'), liveReloadPort);
   console.info();
 });
@@ -133,7 +162,7 @@ for (var key in directories) {
       console.info('  ', colors.grey(event), colors.white(filepath));
       
       //  Signal LiveReload server that file(s) have changed
-      server.changed({ body: { files: [filepath] } });
+      reloadServer.changed({ body: { files: [filepath] } });
     });
 
   })(directories[key]);
